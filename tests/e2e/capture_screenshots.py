@@ -22,8 +22,8 @@ def capture_screenshots():
         # 正常系のスクリーンショットを撮影
         print(f"Navigating to {pass_url}")
         page.goto(pass_url)
-        # アニメーション等のレンダリング待ち (Flakyテスト防止のため sleep は使用しない)
-        page.wait_for_load_state("networkidle")
+        # 静的HTMLの描画完了を待機 (networkidleはSPA等でFlakyになりやすいため、特定要素のレンダリング完了を待機)
+        page.wait_for_selector("h1")
         pass_screenshot_path = os.path.join(screenshot_dir, "pass_screenshot.png")
         page.screenshot(path=pass_screenshot_path, full_page=True)
         print(f"Saved: {pass_screenshot_path}")
@@ -31,7 +31,7 @@ def capture_screenshots():
         # 異常系のスクリーンショットを撮影
         print(f"Navigating to {fail_url}")
         page.goto(fail_url)
-        page.wait_for_load_state("networkidle")
+        page.wait_for_selector("h1")
         fail_screenshot_path = os.path.join(screenshot_dir, "fail_screenshot.png")
         page.screenshot(path=fail_screenshot_path, full_page=True)
         print(f"Saved: {fail_screenshot_path}")

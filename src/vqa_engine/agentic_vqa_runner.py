@@ -131,24 +131,46 @@ def main():
     has_failures = False
     results = []
 
-    for img_path in image_files:
-        result = evaluate_image(client, img_path, system_prompt, args.model)
-        status = result.get("status", "ERROR")
-        
-        results.append({
-            "file": os.path.basename(img_path),
-            "result": result
-        })
+    import concurrent.futures
 
-        if status == "FAIL" or status == "ERROR":
-            logger.error(f"❌ FAILED: {img_path}")
-            logger.error(f"Reasoning: {result.get('reasoning')}")
-            if "issues" in result:
-                for issue in result.get("issues", []):
-                    logger.error(f"  - [{issue.get('severity')}] {issue.get('type')}: {issue.get('description')}")
-            has_failures = True
-        else:
-            logger.info(f"✅ PASSED: {img_path} (Confidence: {result.get('confidence_score', 'N/A')})")
+    def process_image(img_path):
+        result = evaluate_image(client, img_path, system_prompt, args.model)
+        return img_path, result
+
+    # Use ThreadPoolExecutor to evaluate images concurrently
+    max_workers = min(10, len(image_files))
+    logger.info(f"Starting evaluation of {len(image_files)} images with {max_workers} workers...")
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+        future_to_image = {executor.submit(process_image, img): img for img in image_files}
+        
+        for future in concurrent.futures.as_completed(future_to_image):
+            img_path = future_to_image[future]
+            try:
+                _, result = future.result()
+                status = result.get("status", "ERROR")
+                
+                results.append({
+                    "file": os.path.basename(img_path),
+                    "result": result
+                })
+
+                if status == "FAIL" or status == "ERROR":
+                    logger.error(f"❌ FAILED: {img_path}")
+                    logger.error(f"Reasoning: {result.get('reasoning')}")
+                    if "issues" in result:
+                        for issue in result.get("issues", []):
+                            logger.error(f"  - [{issue.get('severity')}] {issue.get('type')}: {issue.get('description')}")
+                    has_failures = True
+                else:
+                    logger.info(f"✅ PASSED: {img_path} (Confidence: {result.get('confidence_score', 'N/A')})")
+            except Exception as exc:
+                logger.error(f"❌ ERROR evaluating {img_path}: {exc}")
+                results.append({
+                    "file": os.path.basename(img_path),
+                    "result": {"status": "ERROR", "reasoning": str(exc), "issues": []}
+                })
+                has_failures = True
 
     print("\n--- Visual QA Summary ---")
     print(f"Total Images: {len(image_files)}")
