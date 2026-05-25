@@ -73,3 +73,9 @@ ai-qa-architecture-portfolio/
 技術選定の背景とトレードオフについては、以下のドキュメントをご参照ください。
 * [ADR-001: Agentic Visual QA 基盤に VLM を採用する決定](./docs/adr/001-agentic-vqa-vlm.md)
 * [ADR-002: OpenAPI を SSOT とした Schema-Driven Development の採用](./docs/adr/002-schema-driven-development.md)
+
+---
+
+## 🗺️ Future Roadmap
+
+当ポートフォリオの今後の発展（Agentic VQAの自律化、Schema Syncの実装、ROIの提示強化など）については、**[ROADMAP.md](./ROADMAP.md)** をご参照ください。
