@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic VQA Dummy App - 異常系(レイアウト崩れ)</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+        }
+        /* 意図的なレイアウト崩れ: 激しく重ならせる */
+        .card-grid {
+            display: flex;
+            margin-top: 20px;
+            gap: -150px; /* Error! 極端なマイナス値で重なりを発生させる */
+            width: 200%; /* Error! 画面外への極端なはみ出し */
+            flex-wrap: nowrap;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            background: rgba(250, 250, 250, 0.5); /* 半透明にして重なりを強調 */
+            /* 意図的な文字サイズエラー */
+            font-size: 8px; /* 読めない */
+            color: #ddd; /* 背景と同化させる */
+        }
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.2em;
+            color: #fafafa; /* 背景と同化して見えない */
+        }
+        .btn {
+            display: inline-block;
+            background: #fafafa; /* 背景と同化 */
+            /* 意図的なボタン崩れ: 文字と同じ背景色、パディングなし */
+            color: #fafafa; /* Error! まったく読めない */
+            padding: 0px; /* Error! 押しにくい */
+            text-decoration: none;
+            border-radius: 4px;
+            margin-top: 10px;
+            width: 1px; /* 押せない */
+            height: 1px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ユーザーダッシュボード</h1>
+        <p>ようこそ、[USER_NAME]さん。本日のタスク状況です。</p>
+
+        <div class="card-grid">
+            <div class="card">
+                <h2>タスク A</h2>
+                <p>PlaywrightのE2Eテストスクリプトを実装する。</p>
+                <a href="#" class="btn">詳細を見る</a>
+            </div>
+            <div class="card">
+                <h2>タスク B</h2>
+                <p>VLMによるレイアウト崩れ検知のプロンプトを調整する。</p>
+                <a href="#" class="btn">詳細を見る</a>
+            </div>
+            <div class="card">
+                <h2>タスク C</h2>
+                <p>GitHub Actionsで自動実行パイプラインを構築する。</p>
+                <a href="#" class="btn">詳細を見る</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

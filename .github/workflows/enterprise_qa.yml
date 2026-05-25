@@ -1,0 +1,89 @@
+name: Enterprise QA & Schema Sync Pipeline
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  schema-sync:
+    name: Schema-Driven Type Generation Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src/schema_sync
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './src/schema_sync/package-lock.json'
+      - run: npm ci
+      - name: Generate Types and Check for Drift
+        run: |
+          npm run generate-types
+          if [[ -n $(git status --porcelain ./types) ]]; then
+            echo "::error::API Schema and TypeScript types are out of sync! Please run 'npm run generate-types' locally and commit the changes."
+            git diff
+            exit 1
+          fi
+
+  agentic-vqa:
+    name: Agentic Visual QA via Gemini
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+          
+      - name: Capture Screenshots (Playwright)
+        run: python tests/e2e/capture_screenshots.py
+
+      - name: Auth to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+          
+      - name: Run VQA Engine (Gemini 2.5 Pro)
+        id: vqa
+        env:
+          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+        run: |
+          # 評価スクリプトを実行。レイアウト崩れ(FAIL)があれば exit 1 で落ちる想定
+          python src/vqa_engine/agentic_vqa_runner.py --img-dir screenshots --prompt-file src/vqa_engine/system_prompt.md > vqa_report.txt 2>&1
+          
+      - name: Upload Screenshots Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vqa-screenshots
+          path: screenshots/
+          retention-days: 7
+          
+      - name: Comment PR on Failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('vqa_report.txt', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `### 🚨 Agentic Visual QA Failed\n\nGemini 2.5 Pro detected a semantic layout break.\n\n\`\`\`text\n${report}\n\`\`\``
+            })
