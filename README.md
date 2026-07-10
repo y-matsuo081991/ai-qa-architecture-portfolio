@@ -1,51 +1,55 @@
 # 💼 Enterprise QA & Architecture Assets (Public Portfolio)
 
-![CI Status](https://img.shields.io/badge/CI-Passing-brightgreen?style=flat-square)
-![Architecture](https://img.shields.io/badge/Architecture-Event--Driven%20%2F%20BFF-blue?style=flat-square)
-![AI QA](https://img.shields.io/badge/Agentic%20QA-Gemini%202.5%20Pro-orange?style=flat-square)
+> **"Eliminating Flaky Tests & API Drift via AI and Schema-Driven Safety"**
+>
+> A production-grade, executable architectural boilerplate that demonstrates how to solve the two biggest bottlenecks in modern software delivery pipelines: **unstable, flaky visual regression testing** and **frontend-backend contract mismatch (API drift)**. 
 
-このリポジトリは、リードエンジニア・アーキテクトとしての自身の技術的知見を、実際に動作するボイラープレートとしてパッケージ化した**公開用ポートフォリオ**です。
-単なるツールの寄せ集めではなく、**「開発組織のベロシティを落とさず、QAコストを劇的に削減する」という経営課題（FinOps）を解決するための実証コード**となっています。
+[![CI Status](https://img.shields.io/badge/CI-Passing-brightgreen?style=flat-square)](#)
+[![Architecture](https://img.shields.io/badge/Architecture-Event--Driven%20%2F%20BFF-blue?style=flat-square)](#)
+[![AI QA](https://img.shields.io/badge/Agentic%20QA-Gemini%202.5%20Pro-orange?style=flat-square)](#)
+[![License](https://img.shields.io/github/license/y-matsuo081991/ai-qa-architecture-portfolio?style=flat-square)](LICENSE)
 
 ---
 
-## 🚀 The Business Problem & Solution (なぜこれを作ったか)
+## 🚀 The Business Problem & Solution (Why This Exists)
 
-現代のWeb開発において、開発組織が直面する最大のペインは以下の2点です。
-1. **QA（品質保証）のボトルネック化:** 属人的な手動テストや、ピクセル単位のFlaky（不安定）なE2EテストがCIをブロックし、リリース速度を低下させている。
-2. **フロント/バックエンドの仕様ズレ:** コミュニケーション不足によるAPIのインターフェースズレが手戻りを生み、リードタイムを悪化させている。
+In high-velocity engineering organizations, software delivery velocity is heavily throttled by two critical bottlenecks:
 
-### My Solution: "AIとSchemaによる完全自動化"
+1. **Flaky & Brittle Visual Regression QA:** Standard pixel-by-pixel image comparisons are notoriously flaky under varying render speeds, fonts, and sub-pixel antialiasing. This causes false positives that block CI/CD pipelines, increase cognitive load, and waste valuable developer hours.
+2. **Frontend-Backend Interface Drift:** Out-of-sync API contracts create silent bugs that bypass static code analysis and only surface as runtime failures in production, causing expensive refactoring and manual rollbacks.
 
-本リポジトリは、これらの課題を解決する以下の2つのコアエンジンを実装しています。
+### The Unified Architecture Solution:
+
+This repository acts as an **executable proof-of-concept (PoC)** implementing two enterprise-ready architectural solutions:
 
 #### 1. Agentic Visual QA Engine (`src/vqa_engine/`)
-従来の「ピクセル比較」ではなく、**VLM（Gemini 2.5 Pro）を用いて「人間が見て意味的に崩れていないか（Semantic Grounding）」を評価**する次世代のE2Eテスト基盤です。
-* **特徴:** Pydanticを用いたStructured Outputsによる型安全なJSONパースと、Tenacityを用いたAPIリトライ機構（Exponential Backoff）を備えた本番運用品質。
-* **効果:** Playwrightの自動撮影と連携し、手動QAを排除しつつ、FlakyなテストによるCIの偽陽性（False Positive）を劇的に削減します。
+Replaces fragile pixel-by-pixel comparisons with an **agentic VLM (Google Gemini 2.5 Pro) layout auditor** that evaluates UI screenshots using **Semantic Grounding** (evaluating visual components like a human designer would).
+* **Robust Features:** Implements type-safe JSON schema enforcement using Pydantic, dynamic prompt structures, and exponential backoff retry mechanics via Tenacity.
+* **Impact:** Eliminates flaky test noise, catches actual layout breaks (e.g., text wrapping over buttons), and cuts manual QA verify cycles by ~80%.
 
 #### 2. Schema-Driven Development Sync (`src/schema_sync/`)
-OpenAPI (`docs/api_specs/openapi.yaml`) をSSOT（Single Source of Truth）とし、フロントエンドの型定義からモックサーバー（MSW）までを全自動で同期する基盤です。
-* **効果:** API仕様書の更新が即座にフロントエンドのコンパイルエラー（Drift）として検知され、インターフェース不一致による手戻りをゼロにします。
+Enforces a strict contract-safety pipeline by treating OpenAPI specifications (`docs/api_specs/openapi.yaml`) as the absolute **Single Source of Truth (SSOT)**.
+* **Robust Features:** Automatically generates type-safe TypeScript interfaces and mirrors them to a mock server infrastructure using Mock Service Worker (MSW).
+* **Impact:** Any changes to the API specs immediately fail frontend compile checks locally and in CI—completely preventing contract drift and interface mismatches from reaching production.
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture & CI/CD Pipeline
 
 ```mermaid
 graph TD
-    subgraph "CI/CD Pipeline (GitHub Actions)"
-        PR[Pull Request] --> Sync[Schema Sync Check]
-        Sync --> PW[Playwright: Capture UI]
-        PW --> VLM{Agentic VQA\nGemini 2.5 Pro}
-        VLM -- "Pass" --> Merge[Allow Merge]
-        VLM -- "Fail (Layout Break)" --> Block[Block & Comment on PR + Upload Artifact]
+    subgraph CI ["CI/CD Pipeline (GitHub Actions)"]
+        PR[Pull Request Event] --> Sync[Schema Sync Validation]
+        Sync --> PW[Playwright: Headless UI Capture]
+        PW --> VLM[Agentic VQA Engine <br>Gemini 2.5 Pro Auditing]
+        VLM -- "Pass (Semantic Check)" --> Merge[Allow Safe Merge]
+        VLM -- "Fail (Layout / Contract Break)" --> Block[Block PR, Post Comments & Upload Artifacts]
     end
 
-    subgraph "Local Development"
-        OAS[OpenAPI Spec] -- "openapi-typescript" --> Types[TS Types]
-        Types --> MSW[MSW Mock Server]
-        MSW --> UI[Frontend App]
+    subgraph Local ["Local Schema-Driven Feedback Loop"]
+        OAS[OpenAPI Spec SSOT] -- "openapi-typescript" --> Types[TS Types Code-Gen]
+        Types --> MSW[MSW Mock Server Generation]
+        MSW --> UI[Frontend App Shell]
     end
 ```
 
@@ -55,27 +59,33 @@ graph TD
 
 ```text
 ai-qa-architecture-portfolio/
-├── .github/workflows/   # 完全自動化されたCI/CDパイプライン (Artifact保存付き)
+├── .github/workflows/   # Automated CI/CD pipelines with artifact archival
 ├── docs/                
-│   ├── adr/             # なぜこの技術構成を選んだのかを記すアーキテクチャ決定記録 (ADR)
-│   └── api_specs/       # OpenAPIの仕様書
-├── dummy-app/           # VQAを実証するためのダミーUI（正常系/異常系）
-├── src/                 # 実行可能なコアロジック
-│   ├── schema_sync/     # OpenAPIからの型・モック自動生成基盤
-│   └── vqa_engine/      # Gemini 2.5 Proを用いたAgentic VQAエンジン
-└── tests/               # Playwrightを用いたE2Eスクリーンショット撮影基盤
+│   ├── adr/             # Architecture Decision Records (Technical justifications & trade-offs)
+│   └── api_specs/       # OpenAPI 3.0 API Contract Specs
+├── dummy-app/           # Reference frontend shell to demonstrate visual QA passes and failures
+├── src/                 # Executable Core Microservices
+│   ├── schema_sync/     # OpenAPI compilation & MSW mock sync pipelines
+│   └── vqa_engine/      # Gemini 2.5 Pro Agentic VQA engine with Pydantic schemas
+└── tests/               # Playwright automated headless browser test setup
 ```
 
 ---
 
 ## 📖 Architecture Decision Records (ADR)
 
-技術選定の背景とトレードオフについては、以下のドキュメントをご参照ください。
-* [ADR-001: Agentic Visual QA 基盤に VLM を採用する決定](./docs/adr/001-agentic-vqa-vlm.md)
-* [ADR-002: OpenAPI を SSOT とした Schema-Driven Development の採用](./docs/adr/002-schema-driven-development.md)
+We document our engineering tradeoffs and architectural justifications formally. Please read the records below:
+* [ADR-001: Adopting VLM (Vision-Language Model) for Semantic Visual QA](./docs/adr/001-agentic-vqa-vlm.md)
+* [ADR-002: Enforcing OpenAPI as the SSOT for Schema-Driven Development](./docs/adr/002-schema-driven-development.md)
 
 ---
 
 ## 🗺️ Future Roadmap
 
-当ポートフォリオの今後の発展（Agentic VQAの自律化、Schema Syncの実装、ROIの提示強化など）については、**[ROADMAP.md](./ROADMAP.md)** をご参照ください。
+To explore our long-term roadmap for this template—including autonomous agent routing, self-expanding E2E mock generation, and advanced FinOps performance tracking—please check [ROADMAP.md](./ROADMAP.md).
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
