@@ -67,6 +67,7 @@ ai-qa-architecture-portfolio/
 ├── src/                 # Executable Core Microservices
 │   ├── schema_sync/     # OpenAPI compilation & MSW mock sync pipelines
 │   └── vqa_engine/      # Gemini 2.5 Flash / Pro Agentic VQA engine with Pydantic schemas
+├── terraform/           # Declarative GCP & GitHub resource provisioning (IaC)
 └── tests/               # Playwright automated headless browser test setup
 ```
 
