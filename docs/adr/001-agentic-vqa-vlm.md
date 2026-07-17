@@ -1,7 +1,7 @@
-# ADR-001: Agentic Visual QA 基盤に VLM (Gemini 2.5 Pro) を採用する決定
+# ADR-001: Agentic Visual QA 基盤に VLM (Gemini 2.5 Flash / Pro) を採用する決定
 
 ## Status
-* **Accepted**
+* **Accepted (Amended to use Gemini 2.5 Flash as default for cost optimization)**
 
 ## Context (背景と課題)
 現代のWebフロントエンド開発において、UIのレイアウト崩れを防ぐための E2E テスト（自動UIテスト）は必須となっている。しかし、従来の「ピクセルパーフェクトな画像比較（Visual Regression Testing: VRT）」ツール（例: reg-suit, Percy など）は以下の課題を抱えていた。
@@ -11,7 +11,7 @@
 これらの課題により、結果として「E2EテストがCIのボトルネックになり、テストが形骸化（放置）される」という経営・開発上のペインが存在していた。
 
 ## Decision (決定事項)
-ピクセル単位の機械的な比較を廃止し、**Playwright で取得したスクリーンショットを VLM（Vision Language Model: 今回は Gemini 2.5 Pro を使用）に渡し、プロンプトベースで「意味的なレイアウト崩れ（Semantic Grounding）」を評価させるアーキテクチャ（Agentic Visual QA）** を採用する。
+ピクセル単位の機械的な比較を廃止し、**Playwright で取得したスクリーンショットを VLM（Vision Language Model: コスト最適化のためデフォルトは Gemini 2.5 Flash、高度な検証には 2.5 Pro を使用）に渡し、プロンプトベースで「意味的なレイアウト崩れ（Semantic Grounding）」を評価させるアーキテクチャ（Agentic Visual QA）** を採用する。
 
 ## Alternatives (代替案と不採用の理由)
 * **ピクセル比較ベースのVRTツール (reg-suit / BackstopJS 等):**
@@ -29,4 +29,4 @@
 * **VLMのハルシネーションリスク:** 稀に、問題のないレイアウトを「崩れている」と誤判定（False Negative）する可能性がある。
   * *Mitigation (緩和策):* CIでの VQA の結果は「マージの強制ブロック」ではなく、PRへの「警告コメント（Warning）」として出力し、最終判断は人間のレビュアー（または特定のラベル付与によるオーバーライド）に委ねる運用とする。
 * **APIコストとレイテンシ:** VLMの推論に1枚あたり数秒〜十数秒の時間がかかり、APIの呼び出しコストが発生する。
-  * *Mitigation (緩和策):* すべての画面遷移で実行するのではなく、クリティカルな画面（決済画面、ダッシュボード等）に絞って E2E を実行する（Testing Trophyの原則）。
+  * *Mitigation (緩和策):* デフォルトモデルとして極めて安価かつ高速な **Gemini 2.5 Flash** を標準採用することでコストと処理時間を大幅に削減。また、すべての画面遷移で実行するのではなく、クリティカルな画面（決済画面、ダッシュボード等）に絞って E2E を実行する（Testing Trophyの原則）。なお、複雑な要素検知が必要な場合は引数指定により高精度な Gemini 2.5 Pro への切り替えも可能とする。

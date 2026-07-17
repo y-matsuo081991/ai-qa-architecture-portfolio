@@ -89,7 +89,7 @@ def main():
     parser = argparse.ArgumentParser(description="Agentic Visual QA Runner")
     parser.add_argument("--img-dir", required=True, help="Directory containing screenshots to evaluate")
     parser.add_argument("--prompt-file", required=True, help="Path to the system prompt markdown file")
-    parser.add_argument("--model", default="gemini-2.5-pro", help="Gemini model to use")
+    parser.add_argument("--model", default="gemini-2.5-flash", help="Gemini model to use")
     
     # GCP Project ID via environment variable or argument
     parser.add_argument("--project-id", default=os.environ.get("GCP_PROJECT_ID", ""), help="GCP Project ID for Vertex AI")
