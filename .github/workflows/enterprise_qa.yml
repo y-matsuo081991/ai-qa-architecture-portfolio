@@ -67,12 +67,12 @@ jobs:
           python src/vqa_engine/agentic_vqa_runner.py --img-dir screenshots --prompt-file src/vqa_engine/system_prompt.md > vqa_report.txt 2>&1
           
       - name: Upload Screenshots Artifact
-         uses: actions/upload-artifact@v4
-         if: always()
-         with:
-           name: vqa-screenshots
-           path: screenshots/
-           retention-days: 7
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vqa-screenshots
+          path: screenshots/
+          retention-days: 7
           
       - name: Comment PR on Failure
         if: failure()
