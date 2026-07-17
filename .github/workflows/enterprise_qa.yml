@@ -83,10 +83,20 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const report = fs.readFileSync('vqa_report.txt', 'utf8');
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `### 🚨 Agentic Visual QA Failed\n\nGemini 2.5 Flash detected a semantic layout break.\n\n\`\`\`text\n${report}\n\`\`\``
-            })
+            if (context.issue && context.issue.number) {
+              let bodyText = `### 🚨 Agentic Visual QA Failed\n\nGemini 2.5 Flash detected a semantic layout break.\n`;
+              if (fs.existsSync('vqa_report.txt')) {
+                const report = fs.readFileSync('vqa_report.txt', 'utf8');
+                bodyText += `\n\`\`\`text\n${report}\n\`\`\``;
+              } else {
+                bodyText += `\n*(No report file 'vqa_report.txt' found. The VQA run might have been skipped due to authentication or build failure.)*`;
+              }
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: bodyText
+              });
+            } else {
+              console.log('Not in a pull request context. Skipping PR comment.');
+            }
