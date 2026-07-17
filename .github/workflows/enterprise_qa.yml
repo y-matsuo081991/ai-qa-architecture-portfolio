@@ -1,6 +1,9 @@
 name: Enterprise QA & Schema Sync Pipeline
 
 on:
+  push:
+    branches:
+      - main
   pull_request:
     branches:
       - main
